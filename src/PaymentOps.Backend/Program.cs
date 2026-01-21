@@ -72,10 +72,6 @@ var openAiApiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")
     ?? throw new InvalidOperationException(
         "OpenAI API key is required. Set OPENAI_API_KEY env var or configure OpenAI:ApiKey (recommended: dotnet user-secrets set \"OpenAI:ApiKey\" \"...\").");
 
-var qdrantBaseUrl = builder.Configuration["Qdrant:BaseUrl"] ?? "http://localhost:6333";
-var collectionName = builder.Configuration["Qdrant:CollectionName"] ?? "paymentops_chunks";
-var vectorSize = builder.Configuration.GetValue<int>("Qdrant:VectorSize", 1536);
-
 // Register application services
 builder.Services.AddSingleton<IEmbeddingClient>(sp =>
     new OpenAIEmbeddingClient(
@@ -89,12 +85,11 @@ builder.Services.AddSingleton<IChatClient>(sp =>
         builder.Configuration["OpenAI:ChatModel"] ?? "gpt-4o-mini",
         sp.GetRequiredService<ILogger<OpenAIChatClient>>()));
 
+// Register vector store using factory
 builder.Services.AddSingleton<IVectorStore>(sp =>
-    new QdrantVectorStore(
-        qdrantBaseUrl,
-        collectionName,
-        vectorSize,
-        sp.GetRequiredService<ILogger<QdrantVectorStore>>()));
+    VectorStoreFactory.Create(
+        sp.GetRequiredService<IConfiguration>(),
+        sp.GetRequiredService<ILoggerFactory>()));
 
 builder.Services.AddSingleton<PromptInjectionDetector>();
 builder.Services.AddScoped<ChunkingService>();
@@ -135,7 +130,8 @@ using (var scope = app.Services.CreateScope())
     }
     catch (Exception ex)
     {
-        Log.Error(ex, "Failed to initialize vector store. Make sure Qdrant is running.");
+        var provider = app.Configuration["VectorStore:Provider"] ?? "Qdrant";
+        Log.Error(ex, "Failed to initialize vector store (Provider: {Provider}). Make sure the vector database is running and configured correctly.", provider);
     }
 }
 

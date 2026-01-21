@@ -1,0 +1,41 @@
+@{
+    ViewData["Title"] = "Home";
+}
+
+<div class="card">
+    <h2>Payment Ops Console</h2>
+    <p>Internal tool for payments engineers to ingest runbooks, integration docs, and incident notes, then answer questions with checklists and citations.</p>
+    
+    <h3>Quick Links</h3>
+    <ul>
+        <li><a href="http://localhost:4200" target="_blank">Angular UI</a> - Main application interface</li>
+        <li><a href="/swagger" target="_blank">Swagger UI</a> - API documentation</li>
+        <li><a href="/api/health">Health Check</a> - Service status</li>
+    </ul>
+    
+    <h3>API Endpoints</h3>
+    <ul>
+        <li><code>POST /api/ingest/text</code> - Ingest text document</li>
+        <li><code>POST /api/ingest/files</code> - Upload and ingest files</li>
+        <li><code>POST /api/ingest/samples</code> - Ingest sample runbooks</li>
+        <li><code>POST /api/ask</code> - Ask a question (RAG)</li>
+        <li><code>GET /api/sources</code> - List ingested documents</li>
+        <li><code>GET /api/sources/{id}</code> - Get document details</li>
+    </ul>
+    
+    <h3>Getting Started</h3>
+    <ol>
+        <li>Make sure Qdrant is running: <code>docker-compose up -d</code></li>
+        <li>
+            Set OpenAI API key via <code>OPENAI_API_KEY</code> <em>or</em> (recommended) .NET User Secrets:
+            <code>cd src/PaymentOps.Backend && dotnet user-secrets set "OpenAI:ApiKey" "..."</code>
+        </li>
+        <li>
+            If Qdrant is not at <code>http://localhost:6333</code>, set:
+            <code>dotnet user-secrets set "Qdrant:BaseUrl" "http://host:6333"</code>
+        </li>
+        <li>Start the Angular frontend: <code>cd frontend/payment-ops-ui && ng serve</code></li>
+        <li>Ingest some documents using the UI or API</li>
+        <li>Start asking questions!</li>
+    </ol>
+</div>

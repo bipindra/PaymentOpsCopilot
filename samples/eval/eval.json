@@ -1,0 +1,128 @@
+[
+  {
+    "id": "dup-webhooks",
+    "question": "We are getting duplicate webhooks. What is the recommended handling?",
+    "mustContain": ["idempotency", "dedupe"],
+    "mustCite": true
+  },
+  {
+    "id": "auth-rate-drop",
+    "question": "Authorization rate dropped to 85%. What should I check?",
+    "mustContain": ["processor", "fraud"],
+    "mustCite": true
+  },
+  {
+    "id": "refund-eligibility",
+    "question": "How do I know if a transaction is eligible for refund?",
+    "mustContain": ["refund", "transaction"],
+    "mustCite": true
+  },
+  {
+    "id": "retry-strategy",
+    "question": "Should I retry a payment that was declined with code 51?",
+    "mustContain": ["insufficient funds", "hard decline"],
+    "mustCite": true
+  },
+  {
+    "id": "fraud-review",
+    "question": "When should a transaction be sent to manual review?",
+    "mustContain": ["$500", "review"],
+    "mustCite": true
+  },
+  {
+    "id": "webhook-retry",
+    "question": "What is the retry schedule for failed webhook deliveries?",
+    "mustContain": ["exponential", "backoff"],
+    "mustCite": true
+  },
+  {
+    "id": "settlement-time",
+    "question": "How long does it take for funds to arrive after settlement?",
+    "mustContain": ["2-3", "business days"],
+    "mustCite": true
+  },
+  {
+    "id": "api-authentication",
+    "question": "How do I authenticate API requests?",
+    "mustContain": ["API key", "Bearer"],
+    "mustCite": true
+  },
+  {
+    "id": "p0-incident",
+    "question": "What is the response process for a P0 incident?",
+    "mustContain": ["immediate", "critical"],
+    "mustCite": true
+  },
+  {
+    "id": "partial-refund-limit",
+    "question": "How many partial refunds can I process per transaction?",
+    "mustContain": ["5"],
+    "mustCite": true
+  },
+  {
+    "id": "velocity-check",
+    "question": "What triggers a velocity check in fraud detection?",
+    "mustContain": ["multiple", "transactions"],
+    "mustCite": true
+  },
+  {
+    "id": "void-vs-refund",
+    "question": "What is the difference between a void and a refund?",
+    "mustContain": ["settlement", "fee"],
+    "mustCite": true
+  },
+  {
+    "id": "reconciliation-discrepancy",
+    "question": "When should I escalate reconciliation discrepancies?",
+    "mustContain": ["0.1%", "volume"],
+    "mustCite": true
+  },
+  {
+    "id": "test-cards",
+    "question": "What test card number should I use for successful transactions?",
+    "mustContain": ["4242"],
+    "mustCite": true
+  },
+  {
+    "id": "rate-limits",
+    "question": "What are the API rate limits?",
+    "mustContain": ["100", "per second"],
+    "mustCite": true
+  },
+  {
+    "id": "unknown-question",
+    "question": "How do I configure email notifications for payment failures?",
+    "mustContain": [],
+    "mustCite": false
+  },
+  {
+    "id": "decline-codes",
+    "question": "What does decline code 54 mean?",
+    "mustContain": ["expired", "card"],
+    "mustCite": true
+  },
+  {
+    "id": "webhook-events",
+    "question": "What webhook events are available?",
+    "mustContain": ["succeeded", "failed"],
+    "mustCite": true
+  },
+  {
+    "id": "fraud-levels",
+    "question": "What transaction amount triggers Level 3 fraud review?",
+    "mustContain": ["$500"],
+    "mustCite": true
+  },
+  {
+    "id": "refund-expiry",
+    "question": "How long do I have to process a refund?",
+    "mustContain": ["180", "days"],
+    "mustCite": true
+  },
+  {
+    "id": "batch-close",
+    "question": "When should I close the payment batch?",
+    "mustContain": ["11:59", "PM"],
+    "mustCite": true
+  }
+]

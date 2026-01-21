@@ -1,0 +1,62 @@
+<div class="card">
+  <h2>Ask a Question</h2>
+  <p>Ask questions about payment operations, runbooks, and procedures.</p>
+  
+  <div class="form-group">
+    <label for="question">Question</label>
+    <textarea
+      id="question"
+      [(ngModel)]="question"
+      placeholder="e.g., Auth rate dropped—what should I check?"
+      rows="4"
+      [disabled]="loading"
+      (keydown.enter)="onEnterKey($event)"></textarea>
+  </div>
+  
+  <button class="btn" (click)="ask()" [disabled]="loading || !question.trim()">
+    {{ loading ? 'Asking...' : 'Ask' }}
+  </button>
+</div>
+
+<div *ngIf="error" class="error">
+  {{ error }}
+</div>
+
+<div *ngIf="response" class="card">
+  <h3>Answer</h3>
+  <div class="markdown-content" [innerHTML]="getRenderedAnswer()"></div>
+  
+  <div *ngIf="response.elapsedMs" style="margin-top: 15px; color: #7f8c8d; font-size: 13px;">
+    Response time: {{ response.elapsedMs }}ms
+    <span *ngIf="response.tokensUsed"> • Tokens: {{ response.tokensUsed }}</span>
+  </div>
+</div>
+
+<div *ngIf="response && response.citations.length > 0" class="card">
+  <h3>Citations ({{ response.citations.length }})</h3>
+  <div *ngFor="let citation of response.citations" class="citation">
+    <div class="citation-header">
+      [{{ citation.documentName }}:{{ citation.chunkIndex }}]
+      <button 
+        class="btn btn-secondary" 
+        style="float: right; padding: 5px 10px; font-size: 12px;"
+        (click)="toggleCitation(citation)">
+        {{ isExpanded(citation) ? 'Hide' : 'Show' }}
+      </button>
+    </div>
+    <div class="citation-snippet">{{ citation.snippet }}</div>
+  </div>
+</div>
+
+<div *ngIf="response && response.retrieved.length > 0" class="card">
+  <h3>Retrieved Chunks ({{ response.retrieved.length }})</h3>
+  <div *ngFor="let chunk of response.retrieved" class="citation">
+    <div class="citation-header">
+      [{{ chunk.documentName }}:{{ chunk.chunkIndex }}]
+      <span *ngIf="chunk.score" style="float: right; color: #7f8c8d; font-size: 12px;">
+        Score: {{ chunk.score.toFixed(3) }}
+      </span>
+    </div>
+    <div class="citation-snippet">{{ chunk.snippet }}</div>
+  </div>
+</div>

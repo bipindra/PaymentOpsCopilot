@@ -1,0 +1,60 @@
+<div class="card">
+  <h2>Sources</h2>
+  <p>View all ingested documents and their chunks.</p>
+  
+  <button class="btn btn-secondary" (click)="loadSources()" [disabled]="loading">
+    {{ loading ? 'Loading...' : 'Refresh' }}
+  </button>
+</div>
+
+<div *ngIf="error" class="error">
+  {{ error }}
+</div>
+
+<div *ngIf="loading && sources.length === 0" class="loading">
+  Loading sources...
+</div>
+
+<div *ngIf="sources.length > 0" class="card">
+  <h3>Documents ({{ sources.length }})</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Document Name</th>
+        <th>Chunks</th>
+        <th>Size</th>
+        <th>Created</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let source of sources">
+        <td>{{ source.docName }}</td>
+        <td>{{ source.chunkCount }}</td>
+        <td>{{ formatBytes(source.totalSizeBytes) }}</td>
+        <td>{{ source.createdUtc | date:'short' }}</td>
+        <td>
+          <button class="btn" (click)="viewSource(source)">View</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div *ngIf="loadingDetail" class="loading">
+  Loading source details...
+</div>
+
+<div *ngIf="selectedSource" class="card">
+  <h3>{{ selectedSource.docName }}</h3>
+  <p><strong>Source Path:</strong> {{ selectedSource.sourcePath || 'N/A' }}</p>
+  <p><strong>Chunks:</strong> {{ selectedSource.chunkCount }}</p>
+  <p><strong>Size:</strong> {{ formatBytes(selectedSource.totalSizeBytes) }}</p>
+  <p><strong>Created:</strong> {{ selectedSource.createdUtc | date:'short' }}</p>
+  
+  <h4 style="margin-top: 20px;">Chunks</h4>
+  <div *ngFor="let chunk of selectedSource.chunks" class="citation">
+    <div class="citation-header">Chunk {{ chunk.chunkIndex }} ({{ chunk.textLength }} chars)</div>
+    <div class="citation-snippet">{{ chunk.snippet }}</div>
+  </div>
+</div>

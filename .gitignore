@@ -1,0 +1,44 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+*.cache
+*.dll
+*.exe
+*.pdb
+*.log
+
+# Node
+node_modules/
+npm-debug.log
+dist/
+.angular/
+
+# IDE
+.vs/
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment
+.env
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build outputs
+*.dll
+*.exe
+*.pdb
+
+# Logs
+logs/
+*.log
+
+# Evaluation reports (generated)
+samples/eval/report.md

@@ -1,0 +1,47 @@
+<div class="card">
+  <h2>Ingest Documents</h2>
+  <p>Upload markdown or text files to add them to the knowledge base.</p>
+  
+  <div class="form-group">
+    <label for="fileInput">Select Files (.md or .txt)</label>
+    <input
+      type="file"
+      id="fileInput"
+      multiple
+      accept=".md,.txt"
+      (change)="onFileSelected($event)"
+      [disabled]="loading">
+  </div>
+  
+  <button class="btn btn-secondary" (click)="ingestSamples()" [disabled]="loading">
+    {{ loading ? 'Ingesting...' : 'Ingest Sample Runbooks' }}
+  </button>
+</div>
+
+<div *ngIf="error" class="error">
+  {{ error }}
+</div>
+
+<div *ngIf="success" class="success">
+  {{ success }}
+</div>
+
+<div *ngIf="results.length > 0" class="card">
+  <h3>Ingestion Results</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Document Name</th>
+        <th>Chunks</th>
+        <th>Created</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let result of results">
+        <td>{{ result.docName }}</td>
+        <td>{{ result.chunkCount }}</td>
+        <td>{{ result.createdUtc | date:'short' }}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>

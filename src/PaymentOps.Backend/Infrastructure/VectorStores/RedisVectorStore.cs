@@ -161,33 +161,37 @@ public class RedisVectorStore : IVectorStore
         var result = await server.ExecuteAsync("FT.SEARCH", searchArgs);
         var docGroups = new Dictionary<Guid, Document>();
 
-        if (result is RedisResult[] results && results.Length > 1)
+        if (result.Type == ResultType.MultiBulk)
         {
-            var count = (int)results[0];
-            for (int i = 1; i < results.Length; i += 2)
+            var results = (RedisResult[])result;
+            if (results.Length > 1)
             {
-                if (i + 1 < results.Length && results[i + 1] is RedisResult[] fields)
+                var count = (int)results[0];
+                for (int i = 1; i < results.Length; i += 2)
                 {
-                    var docIdStr = GetFieldValue(fields, "docId");
-                    if (Guid.TryParse(docIdStr, out var docId))
+                    if (i + 1 < results.Length && results[i + 1].Type == ResultType.MultiBulk)
                     {
-                        if (!docGroups.ContainsKey(docId))
+                        var fields = (RedisResult[])results[i + 1];
+                        var docIdStr = GetFieldValue(fields, "docId");
+                        if (Guid.TryParse(docIdStr, out var docId))
                         {
-                            docGroups[docId] = new Document
+                            if (!docGroups.ContainsKey(docId))
                             {
-                                Id = docId,
-                                Name = GetFieldValue(fields, "docName"),
-                                SourcePath = GetFieldValue(fields, "sourcePath"),
-                                CreatedUtc = long.TryParse(GetFieldValue(fields, "createdUtc"), out var ticks) 
-                                    ? new DateTime(ticks) 
-                                    : DateTime.UtcNow,
-                                ChunkCount = 0,
-                                TotalSizeBytes = 0
-                            };
+                                docGroups[docId] = new Document
+                                {
+                                    Id = docId,
+                                    Name = GetFieldValue(fields, "docName"),
+                                    CreatedUtc = long.TryParse(GetFieldValue(fields, "createdUtc"), out var ticks) 
+                                        ? new DateTime(ticks) 
+                                        : DateTime.UtcNow,
+                                    ChunkCount = 0,
+                                    TotalSizeBytes = 0
+                                };
+                            }
+                            docGroups[docId].ChunkCount++;
+                            var text = GetFieldValue(fields, "text");
+                            docGroups[docId].TotalSizeBytes += text?.Length ?? 0;
                         }
-                        docGroups[docId].ChunkCount++;
-                        var text = GetFieldValue(fields, "text");
-                        docGroups[docId].TotalSizeBytes += text?.Length ?? 0;
                     }
                 }
             }
@@ -231,48 +235,52 @@ public class RedisVectorStore : IVectorStore
     {
         var chunks = new List<Chunk>();
 
-        if (result is RedisResult[] results && results.Length > 1)
+        if (result.Type == ResultType.MultiBulk)
         {
-            var count = (int)results[0];
-            for (int i = 1; i < results.Length; i += 2)
+            var results = (RedisResult[])result;
+            if (results.Length > 1)
             {
-                if (i + 1 < results.Length && results[i + 1] is RedisResult[] fields)
+                var count = (int)results[0];
+                for (int i = 1; i < results.Length; i += 2)
                 {
-                    // Check score if available (for vector search results)
-                    var score = 1.0f;
-                    if (i > 1 && results[i - 1] is RedisResult scoreResult)
+                    if (i + 1 < results.Length && results[i + 1].Type == ResultType.MultiBulk)
                     {
-                        if (double.TryParse(scoreResult.ToString(), out var scoreValue))
+                        var fields = (RedisResult[])results[i + 1];
+                        // Check score if available (for vector search results)
+                        var score = 1.0f;
+                        if (i > 1 && results[i - 1] is RedisResult scoreResult)
                         {
-                            // Redis returns distance, convert to similarity (1 - distance for cosine)
-                            score = (float)(1.0 - scoreValue);
+                            if (double.TryParse(scoreResult.ToString(), out var scoreValue))
+                            {
+                                // Redis returns distance, convert to similarity (1 - distance for cosine)
+                                score = (float)(1.0 - scoreValue);
+                            }
                         }
-                    }
 
-                    if (minScore.HasValue && score < minScore.Value)
-                    {
-                        continue;
-                    }
-
-                    var idStr = GetFieldValue(fields, "id");
-                    var docIdStr = GetFieldValue(fields, "docId");
-                    
-                    if (Guid.TryParse(idStr, out var id) && Guid.TryParse(docIdStr, out var docId))
-                    {
-                        chunks.Add(new Chunk
+                        if (minScore.HasValue && score < minScore.Value)
                         {
-                            Id = id,
-                            DocumentId = docId,
-                            DocumentName = GetFieldValue(fields, "docName"),
-                            SourcePath = GetFieldValue(fields, "sourcePath"),
-                            Hash = GetFieldValue(fields, "hash"),
-                            Index = int.TryParse(GetFieldValue(fields, "chunkIndex"), out var idx) ? idx : 0,
-                            Text = GetFieldValue(fields, "text"),
-                            Snippet = GetFieldValue(fields, "snippet"),
-                            CreatedUtc = long.TryParse(GetFieldValue(fields, "createdUtc"), out var ticks) 
-                                ? new DateTime(ticks) 
-                                : DateTime.UtcNow
-                        });
+                            continue;
+                        }
+
+                        var idStr = GetFieldValue(fields, "id");
+                        var docIdStr = GetFieldValue(fields, "docId");
+                        
+                        if (Guid.TryParse(idStr, out var id) && Guid.TryParse(docIdStr, out var docId))
+                        {
+                            chunks.Add(new Chunk
+                            {
+                                Id = id,
+                                DocumentId = docId,
+                                DocumentName = GetFieldValue(fields, "docName"),
+                                Hash = GetFieldValue(fields, "hash"),
+                                Index = int.TryParse(GetFieldValue(fields, "chunkIndex"), out var idx) ? idx : 0,
+                                Text = GetFieldValue(fields, "text"),
+                                Snippet = GetFieldValue(fields, "snippet"),
+                                CreatedUtc = long.TryParse(GetFieldValue(fields, "createdUtc"), out var ticks) 
+                                    ? new DateTime(ticks) 
+                                    : DateTime.UtcNow
+                            });
+                        }
                     }
                 }
             }

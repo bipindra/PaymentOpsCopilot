@@ -45,28 +45,45 @@ public class OpenSearchVectorStore : IVectorStore
             return;
         }
 
-        var createIndexResponse = await _client.Indices.CreateAsync(_indexName, c => c
-            .Settings(s => s
-                .NumberOfShards(1)
-                .NumberOfReplicas(0))
-            .Map(m => m
-                .Properties(p => p
-                    .Keyword(k => k.Name("id"))
-                    .Keyword(k => k.Name("docId"))
-                    .Text(t => t.Name("docName"))
-                    .Text(t => t.Name("sourcePath"))
-                    .Keyword(k => k.Name("hash"))
-                    .Number(n => n.Name("chunkIndex").Type(NumberType.Integer))
-                    .Text(t => t.Name("text"))
-                    .Text(t => t.Name("snippet"))
-                    .DenseVector(dv => dv
-                        .Name("embedding")
-                        .Dimensions(_vectorSize)
-                        .Index(true)
-                        .Similarity("cosine"))
-                    .Date(d => d.Name("createdUtc")))), ct: cancellationToken);
+        // Create index with k-NN vector field using raw mapping
+        // Note: This requires OpenSearch with k-NN plugin enabled
+        var mappingJson = $@"{{
+            ""settings"": {{
+                ""number_of_shards"": 1,
+                ""number_of_replicas"": 0,
+                ""index"": {{
+                    ""knn"": true,
+                    ""knn.algo_param.ef_search"": 100
+                }}
+            }},
+            ""mappings"": {{
+                ""properties"": {{
+                    ""id"": {{ ""type"": ""keyword"" }},
+                    ""docId"": {{ ""type"": ""keyword"" }},
+                    ""docName"": {{ ""type"": ""text"" }},
+                    ""sourcePath"": {{ ""type"": ""text"" }},
+                    ""hash"": {{ ""type"": ""keyword"" }},
+                    ""chunkIndex"": {{ ""type"": ""integer"" }},
+                    ""text"": {{ ""type"": ""text"" }},
+                    ""snippet"": {{ ""type"": ""text"" }},
+                    ""embedding"": {{
+                        ""type"": ""knn_vector"",
+                        ""dimension"": {_vectorSize},
+                        ""method"": {{
+                            ""name"": ""hnsw"",
+                            ""space_type"": ""cosinesimil"",
+                            ""engine"": ""nmslib""
+                        }}
+                    }},
+                    ""createdUtc"": {{ ""type"": ""date"" }}
+                }}
+            }}
+        }}";
 
-        if (!createIndexResponse.IsValid)
+        // Use low-level API to create index with custom mapping
+        var createIndexResponse = await _client.LowLevel.Indices.CreateAsync<OpenSearch.Net.StringResponse>(_indexName, mappingJson, new OpenSearch.Net.Specification.IndicesApi.CreateIndexRequestParameters(), cancellationToken);
+
+        if (!createIndexResponse.Success)
         {
             throw new InvalidOperationException($"Failed to create index: {createIndexResponse.DebugInformation}");
         }
@@ -132,11 +149,7 @@ public class OpenSearchVectorStore : IVectorStore
             .Index(_indexName)
             .Size(topK)
             .Query(q => q
-                .Knn(k => k
-                    .Field("embedding")
-                    .QueryVector(queryVector)
-                    .K(topK)
-                    .NumCandidates(topK * 2)))
+                .Raw(@"{""knn"": {""field"": ""embedding"", ""query_vector"": " + System.Text.Json.JsonSerializer.Serialize(queryVector) + @", ""k"": " + topK + @"}}"))
             .Source(src => src
                 .Includes(i => i
                     .Fields("id", "docId", "docName", "sourcePath", "hash", "chunkIndex", "text", "snippet", "createdUtc"))),
@@ -164,7 +177,6 @@ public class OpenSearchVectorStore : IVectorStore
                 Id = Guid.Parse(doc.Id),
                 DocumentId = Guid.Parse(doc.DocId),
                 DocumentName = doc.DocName,
-                SourcePath = doc.SourcePath ?? string.Empty,
                 Hash = doc.Hash,
                 Index = doc.ChunkIndex,
                 Text = doc.Text,
@@ -203,7 +215,6 @@ public class OpenSearchVectorStore : IVectorStore
                 {
                     Id = docId,
                     Name = doc.DocName,
-                    SourcePath = doc.SourcePath ?? string.Empty,
                     CreatedUtc = doc.CreatedUtc,
                     ChunkCount = 0,
                     TotalSizeBytes = 0
@@ -252,7 +263,6 @@ public class OpenSearchVectorStore : IVectorStore
                 Id = Guid.Parse(doc.Id),
                 DocumentId = Guid.Parse(doc.DocId),
                 DocumentName = doc.DocName,
-                SourcePath = doc.SourcePath ?? string.Empty,
                 Hash = doc.Hash,
                 Index = doc.ChunkIndex,
                 Text = doc.Text,

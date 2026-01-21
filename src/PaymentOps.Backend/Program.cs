@@ -66,24 +66,17 @@ builder.Services.AddOpenTelemetry()
         .AddHttpClientInstrumentation()
         .AddConsoleExporter());
 
-// Configuration
-var openAiApiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY") 
-    ?? builder.Configuration["OpenAI:ApiKey"] 
-    ?? throw new InvalidOperationException(
-        "OpenAI API key is required. Set OPENAI_API_KEY env var or configure OpenAI:ApiKey (recommended: dotnet user-secrets set \"OpenAI:ApiKey\" \"...\").");
-
 // Register application services
+// Register AI clients using factory
 builder.Services.AddSingleton<IEmbeddingClient>(sp =>
-    new OpenAIEmbeddingClient(
-        openAiApiKey,
-        builder.Configuration["OpenAI:EmbeddingModel"] ?? "text-embedding-3-small",
-        sp.GetRequiredService<ILogger<OpenAIEmbeddingClient>>()));
+    AIClientFactory.CreateEmbeddingClient(
+        sp.GetRequiredService<IConfiguration>(),
+        sp.GetRequiredService<ILoggerFactory>()));
 
 builder.Services.AddSingleton<IChatClient>(sp =>
-    new OpenAIChatClient(
-        openAiApiKey,
-        builder.Configuration["OpenAI:ChatModel"] ?? "gpt-4o-mini",
-        sp.GetRequiredService<ILogger<OpenAIChatClient>>()));
+    AIClientFactory.CreateChatClient(
+        sp.GetRequiredService<IConfiguration>(),
+        sp.GetRequiredService<ILoggerFactory>()));
 
 // Register vector store using factory
 builder.Services.AddSingleton<IVectorStore>(sp =>
@@ -138,3 +131,6 @@ using (var scope = app.Services.CreateScope())
 Log.Information("PaymentOps.Backend starting on {Urls}", string.Join(", ", app.Urls));
 
 app.Run();
+
+// Make Program class accessible for WebApplicationFactory in tests
+public partial class Program { }

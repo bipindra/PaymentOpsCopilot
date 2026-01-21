@@ -66,24 +66,7 @@ public class AzureAISearchVectorStore : IVectorStore
                 new SearchableField("text"),
                 new SearchableField("snippet"),
                 new SimpleField("createdUtc", SearchFieldDataType.DateTimeOffset) { IsFilterable = true, IsSortable = true },
-                new VectorSearchField("embedding", _vectorSize, "cosine")
-            },
-            VectorSearch = new VectorSearchConfiguration
-            {
-                Profiles =
-                {
-                    new VectorSearchProfile("default", "default-hnsw")
-                },
-                Algorithms =
-                {
-                    new HnswVectorSearchAlgorithmConfiguration("default-hnsw")
-                    {
-                        Parameters = new HnswParameters
-                        {
-                            Metric = VectorSearchAlgorithmMetric.Cosine
-                        }
-                    }
-                }
+                new VectorSearchField("embedding", _vectorSize, "default")
             }
         };
 
